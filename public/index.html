@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.3.2/dist/chart.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@next/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="section">
+            <h2>Real Time Measures</h2>
+            <div class="measures">
+                <div class="measure">
+                    Temperature:
+                    <span id="Temperature">
+                        XX
+                    </span>
+                    <svg class="icon" width="51" viewBox="0 0 51 51" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M41.4375 0C36.1682 0 31.875 4.29316 31.875 9.5625C31.875 14.8318 36.1682 19.125 41.4375 19.125C46.7068 19.125 51 14.8318 51 9.5625C51 4.29316 46.7068 0 41.4375 0ZM41.4375 12.75C39.6744 12.75 38.25 11.3256 38.25 9.5625C38.25 7.79941 39.6744 6.375 41.4375 6.375C43.2006 6.375 44.625 7.79941 44.625 9.5625C44.625 11.3256 43.2006 12.75 41.4375 12.75ZM25.5 11.1562C25.5 4.99043 20.5096 0 14.3438 0C8.17793 0 3.1875 4.99043 3.1875 11.1562V27.7412C1.2252 30.2016 0 33.2695 0 36.6562C0 44.5752 6.4248 51 14.3438 51C22.2627 51 28.6875 44.5752 28.6875 36.6562C28.6875 33.2695 27.4623 30.1916 25.5 27.7412V11.1562ZM14.3438 44.625C9.95098 44.625 6.375 41.049 6.375 36.6562C6.375 34.1162 7.59023 31.7854 9.5625 30.3012V11.1562C9.5625 8.5166 11.7041 6.375 14.3438 6.375C16.9834 6.375 19.125 8.5166 19.125 11.1562V30.3012C21.0973 31.7754 22.3125 34.1162 22.3125 36.6562C22.3125 41.049 18.7365 44.625 14.3438 44.625ZM15.9375 32.1639V30.2812C15.9375 29.4047 15.2203 28.6875 14.3438 28.6875C13.4672 28.6875 12.75 29.4047 12.75 30.2812V32.1639C10.8973 32.8213 9.5625 34.5744 9.5625 36.6562C9.5625 39.2959 11.7041 41.4375 14.3438 41.4375C16.9834 41.4375 19.125 39.2959 19.125 36.6562C19.125 34.5744 17.7902 32.8213 15.9375 32.1639Z"
+                            fill="#C5C8C6" />
+                    </svg>
+                </div>
+              
+            </div>
+
+        </div>
+        <div class="charts">
+            <div class="section">
+                <h2>Temperature</h2>
+                <div class="chart">
+                    <canvas height="400" id="temp-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/script.js"></script>
+</body>
+
+</html>
