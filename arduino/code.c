@@ -8,12 +8,12 @@
 char *ssid = "DJAWEB_SLE";
 char *password = "allhailyounes";
 
-String serverName = "http://192.168.8.100:4000/update-sensor";
+String serverName = "http://192.168.8.110:4000/update-sensor";
 
 // the following variables are unsigned longs because the time, measured in
 unsigned long lastTime = 0;
-// Set timer to 5 seconds (5000)
-unsigned long timerDelay = 5000;
+// Set timer to 60 seconds 
+unsigned long timerDelay = 60 * 1000;
 
 // Data wire is plugged into port 2 on the Arduino
 #define ONE_WIRE_BUS 2
