@@ -17,15 +17,16 @@ model User {
 }
 
 model Device {
-  id         Int          @id @default(autoincrement())
-  name       String
-  device_id  String       @unique
-  tempretures Tempreture[]
+  id           Int           @id @default(autoincrement())
+  name         String
+  device_id    String        @unique
+  temperatures Temperature[]
 }
 
-model Tempreture {
-  id        Int    @id @default(autoincrement())
+model Temperature {
+  id        Int      @id @default(autoincrement())
   value     String
+  timestamp DateTime @default(now())
   device_id Int
-  device    Device @relation(fields: [device_id], references: [id])
+  device    Device   @relation(fields: [device_id], references: [id])
 }
