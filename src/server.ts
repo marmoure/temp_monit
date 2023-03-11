@@ -37,8 +37,45 @@ app.get('/update-sensor', async (req, res) => {
       }
     }
   })
-  if(! device || !newTemperature) return res.send("ERROR");
+  if (!device || !newTemperature) return res.send("ERROR");
   res.send("OK");
+})
+
+app.get("/history", async (req, res) => {
+  const { device_id } = req.query;
+  if (!device_id) return res.send("ERROR");
+  const device = await prisma.device.findUnique({
+    where: {
+      device_id: device_id as string
+    }
+  });
+  if (!device) return res.send("ERROR");
+  let temperatures = await prisma.temperature.findMany({
+    where: {
+      device_id: device.id
+    }
+  });
+
+  res.json(
+    temperatures.map(temperature => {
+      return {
+        value: temperature.value,
+        timestamp: new Date(temperature.timestamp).getTime()
+      }
+    })
+  );
+})
+
+app.get("/devices", async (req, res) => {
+  const devices = await prisma.device.findMany();
+  res.json(
+    devices.map(device => {
+      return {
+        name: device.name,
+        device_id: device.device_id
+      }
+    })
+  );
 })
 
 
