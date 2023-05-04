@@ -6,7 +6,7 @@
 
 char *ssid = "D-Link";
 char *password = "allhailyounes";
-String serverName = "http://192.168.8.110:4000/update-sensor";
+String serverName = "http://marmoure.me:4000/update-sensor";
 
 // temptrure
 #include <Adafruit_Sensor.h>
@@ -110,7 +110,7 @@ void loop(void)
       WiFiClient client;
       HTTPClient http;
 
-      String serverPath = serverName + "?temperature=" + String(event.temperature);
+      String serverPath = serverName + "?temperature=" + String(event.temperature) + "&" + "device_id=" + String(WiFi.macAddress());
 
       // Your Domain name with URL path or IP address with path
       http.begin(client, serverPath.c_str());
