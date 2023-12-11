@@ -1,17 +1,20 @@
 import path from 'path';
 import express from 'express';
+import morgan from 'morgan';
 import prisma from './database';
+import { Humidity } from '@prisma/client';
 
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use(morgan('tiny'));
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get('/update-sensor', async (req, res) => {
   console.log(req.query);
-  const { temperature, device_id } = req.query;
+  const { temperature, device_id, name, humidity, sensor} = req.query;
   if (!temperature || !device_id) return res.send("ERROR");
   let device = await prisma.device.findUnique({
     where: {
@@ -22,7 +25,8 @@ app.get('/update-sensor', async (req, res) => {
     device = await prisma.device.create({
       data: {
         device_id: device_id as string,
-        name: "TODO"
+        name: name as string,
+        sensor: sensor as string
       }
     })
   }
@@ -37,7 +41,24 @@ app.get('/update-sensor', async (req, res) => {
       }
     }
   })
-  if (!device || !newTemperature) return res.send("ERROR");
+
+  // only create humidity if the sensor 
+  let  newHumidity;
+  if (humidity) {
+    newHumidity = await prisma.humidity.create({
+      data: {
+        value: humidity as string,
+        device: {
+          connect: {
+            id: device.id
+          }
+        }
+      }
+    })
+  }
+
+  
+  if (!device || !newTemperature || !newHumidity) return res.send("ERROR");
   res.send("OK");
 })
 
@@ -56,14 +77,29 @@ app.get("/history", async (req, res) => {
     }
   });
 
-  res.json(
-    temperatures.map(temperature => {
+  // only get humidity if the sensor is a DHT
+  let  humidity : Humidity[] = [];
+  if(device.sensor.includes("DHT")) {
+    humidity = await prisma.humidity.findMany({
+      where: {
+        device_id: device.id
+      }
+    });
+  }
+  res.json({
+    temperatures: temperatures.map(temperature => {
       return {
         value: temperature.value,
         timestamp: new Date(temperature.timestamp).getTime()
       }
+    }),
+    humidity: humidity.map(humidity => {
+      return {
+        value: humidity.value,
+        timestamp: new Date(humidity.timestamp).getTime()
+      }
     })
-  );
+  });
 })
 
 app.get("/devices", async (req, res) => {
@@ -72,7 +108,8 @@ app.get("/devices", async (req, res) => {
     devices.map(device => {
       return {
         name: device.name,
-        device_id: device.device_id
+        device_id: device.device_id,
+        sensor: device.sensor
       }
     })
   );

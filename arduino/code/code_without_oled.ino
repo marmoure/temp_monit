@@ -7,7 +7,7 @@
 
 char *ssid = "ZTE_2.4G_cxm65S";
 char *password = "Mp22NW9j";
-String serverName = "http://192.168.8.5:4000/update-sensor";
+String serverName = "http://192.168.8.110:4000/update-sensor";
 
 // temptrure
 #include <Adafruit_Sensor.h>
@@ -15,23 +15,8 @@ String serverName = "http://192.168.8.5:4000/update-sensor";
 #include <DHT_U.h>
 
 #define DHTPIN 2 // D4 pin 
-#define DHTTYPE    DHT22     // DHT 22 (AM2302)
+#define DHTTYPE    DHT11     // DHT 22 (AM2302)
 DHT_Unified dht(DHTPIN, DHTTYPE);
-// oled
-
-#include <SPI.h>
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
-
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 32 // OLED display height, in pixels
-#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
-#define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-// pins 
-// D1 SCL
-// D2 SDA
 
 // the following variables are unsigned longs because the time, measured in
 unsigned long lastTime = 0;
@@ -47,16 +32,6 @@ void setup(void)
   // start serial port
   Serial.begin(9600);
 
-  // start the display
-  if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-    Serial.println(F("SSD1306 allocation failed"));
-  }
-    display.display();
-   display.setTextColor(SSD1306_WHITE);        // Draw white text
-   display.setCursor(0,0);             // Start at top-left corner
-   display.setTextSize(3);             // Draw 2X-scale text
-   delay(2000); // Pause for 2 seconds
-  
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
@@ -81,9 +56,7 @@ void setup(void)
  * Main function, get and show the temperature
  */
 void loop(void)
-{
-  String msg = "";
-  
+{  
   // Send an HTTP POST request depending on timerDelay
   if ((millis() - lastTime) > timerDelay)
   {
@@ -94,27 +67,17 @@ void loop(void)
     sensors_event_t event;
     dht.temperature().getEvent(&event);
     
-    Serial.println("DONE");
-    // After we got the temperatures, we can print them here.
-
-     display.clearDisplay();
-     display.setCursor(0,0);             // Start at top-left corner
-     
     // Check if reading was successful
     if (isnan(event.temperature)) {
        Serial.println("Error: Could not read temperature data"); 
-       msg = "Sensor";
-    }else {
-     msg = String(event.temperature) + "C"; 
     }
+
+    String temp = String(event.temperature);
 
     dht.humidity().getEvent(&event);
     // Check if reading was successful
     if (isnan(event.relative_humidity)) {
        Serial.println("Error: Could not read relative_humidity data"); 
-       msg = "Sensor";
-    }else {
-     msg = String(event.relative_humidity) + "%"; 
     }
  
     // Check WiFi connection status
@@ -123,7 +86,7 @@ void loop(void)
       WiFiClient client;
       HTTPClient http;
 
-      String serverPath = serverName + "?sensor=DHT22&temperature=" + String(event.temperature) + "&" + "device_id=" + String(WiFi.macAddress()) + "&humidity=" + String(event.relative_humidity);
+      String serverPath = serverName + "?name=wemos_dht11_1&sensor=DHT11&temperature=" + temp + "&" + "device_id=" + String(WiFi.macAddress()) + "&humidity=" + String(event.relative_humidity);
 
       // Your Domain name with URL path or IP address with path
       http.begin(client, serverPath.c_str());
@@ -145,7 +108,6 @@ void loop(void)
       {
         Serial.print("Error code: ");
         Serial.println(httpResponseCode);
-        msg = "server" ;
       }
       // Free resources
       http.end();
@@ -153,10 +115,7 @@ void loop(void)
     else
     {
       Serial.println("WiFi Disconnected");
-      msg = "wifi";
     }
-    display.println(msg);
-    display.display();
     lastTime = millis();
   }
   delay(10 * 1000);

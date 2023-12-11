@@ -20,10 +20,20 @@ model Device {
   id           Int           @id @default(autoincrement())
   name         String
   device_id    String        @unique
+  sensor      String
   temperatures Temperature[]
+  humidities   Humidity[]
 }
 
 model Temperature {
+  id        Int      @id @default(autoincrement())
+  value     String
+  timestamp DateTime @default(now())
+  device_id Int
+  device    Device   @relation(fields: [device_id], references: [id])
+}
+
+model Humidity {
   id        Int      @id @default(autoincrement())
   value     String
   timestamp DateTime @default(now())
