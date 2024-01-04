@@ -3,6 +3,7 @@ import express from 'express';
 import morgan from 'morgan';
 import prisma from './database';
 import { Humidity } from '@prisma/client';
+import bot, {notifyMe} from './bot';
 
 const app = express();
 
@@ -59,6 +60,12 @@ app.get('/update-sensor', async (req, res) => {
 
   
   if (!device || !newTemperature || !newHumidity) return res.send("ERROR");
+
+  // check if the sensor is an incubation sensor
+  if(device.sensor.includes("incubation")) {
+    if(+temperature > 25) notifyMe(`Temperature is ${temperature}°C, please check the incubation sensor`);
+    if(+temperature < 23) notifyMe(`Temperature is ${temperature}°C, please check the incubation sensor`);
+  }
   res.send("OK");
 })
 

@@ -10,13 +10,20 @@ char *password = "Mp22NW9j";
 String serverName = "http://192.168.8.110:4000/update-sensor";
 
 // temptrure
-#include <Adafruit_Sensor.h>
-#include <DHT.h>
-#include <DHT_U.h>
 
-#define DHTPIN 2 // D4 pin 
-#define DHTTYPE    DHT11     // DHT 22 (AM2302)
-DHT_Unified dht(DHTPIN, DHTTYPE);
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
+
+// Data wire is conntec to the wemos pin D4
+#define ONE_WIRE_BUS 2
+
+// Setup a oneWire instance to communicate with any OneWire devices
+OneWire oneWire(ONE_WIRE_BUS);
+
+// Pass our oneWire reference to Dallas Temperature sensor 
+DallasTemperature sensors(&oneWire);
+// tempture end
 
 // the following variables are unsigned longs because the time, measured in
 unsigned long lastTime = 0;
@@ -28,10 +35,9 @@ unsigned long timerDelay = 60 * 1000;
  */
 void setup(void)
 {
-  WiFi.begin(ssid, password);
-  // start serial port
   Serial.begin(9600);
-
+  // wifi
+  WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
@@ -43,14 +49,11 @@ void setup(void)
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 
-  // Start up the library
-  dht.begin();
-  sensor_t sensor;
-  dht.temperature().getSensor(&sensor);
-  dht.humidity().getSensor(&sensor);
+  // temperature
+  sensors.begin();
 
-  //OTA
-  ArduinoOTA.setHostname("wemos-d1-mini-DHT11");
+  // OTA
+  ArduinoOTA.setHostname("wemos-DS18B20-1-incubation");
   ArduinoOTA.begin();
 }
 
@@ -66,21 +69,10 @@ void loop(void)
     // request to all devices on the bus
     Serial.print("Requesting temperatures...");
     
-    sensors_event_t event;
-    dht.temperature().getEvent(&event);
+    sensors.requestTemperatures(); 
+
+    String temp = String(sensors.getTempCByIndex(0));
     
-    // Check if reading was successful
-    if (isnan(event.temperature)) {
-       Serial.println("Error: Could not read temperature data"); 
-    }
-
-    String temp = String(event.temperature);
-
-    dht.humidity().getEvent(&event);
-    // Check if reading was successful
-    if (isnan(event.relative_humidity)) {
-       Serial.println("Error: Could not read relative_humidity data"); 
-    }
  
     // Check WiFi connection status
     if (WiFi.status() == WL_CONNECTED)
@@ -88,7 +80,7 @@ void loop(void)
       WiFiClient client;
       HTTPClient http;
 
-      String serverPath = serverName + "?name=wemos_dht11_1&sensor=DHT11&temperature=" + temp + "&" + "device_id=" + String(WiFi.macAddress()) + "&humidity=" + String(event.relative_humidity);
+      String serverPath = serverName + "?name=wemos_DS18B20_1_incubation&sensor=DS18B20&temperature=" + temp + "&" + "device_id=" + String(WiFi.macAddress());
 
       // Your Domain name with URL path or IP address with path
       http.begin(client, serverPath.c_str());
