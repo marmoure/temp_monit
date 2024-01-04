@@ -16,7 +16,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.get('/update-sensor', async (req, res) => {
   console.log(req.query);
   const { temperature, device_id, name, humidity, sensor} = req.query;
-  if (!temperature || !device_id) return res.send("ERROR");
+  if (!temperature || !device_id) return res.send("ERROR in provided parameters");
   let device = await prisma.device.findUnique({
     where: {
       device_id: device_id as string
@@ -59,7 +59,7 @@ app.get('/update-sensor', async (req, res) => {
   }
 
   
-  if (!device || !newTemperature || !newHumidity) return res.send("ERROR");
+  if (!device || !newTemperature ) return res.send("error in one of the instances creation");
 
   // check if the sensor is an incubation sensor
   if(device.sensor.includes("incubation")) {
