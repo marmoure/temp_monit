@@ -62,7 +62,7 @@ app.get('/update-sensor', async (req, res) => {
   if (!device || !newTemperature ) return res.send("error in one of the instances creation");
 
   // check if the sensor is an incubation sensor
-  if(device.sensor.includes("incubation")) {
+  if(device.name.includes("incubation")) {
     if(+temperature > 25) notifyMe(`Temperature is ${temperature}°C, please check the incubation sensor`);
     if(+temperature < 23) notifyMe(`Temperature is ${temperature}°C, please check the incubation sensor`);
   }
