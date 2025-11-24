@@ -10,17 +10,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id       Int    @id @default(autoincrement())
-  name     String @unique
-  password String
-}
-
 model Device {
   id           Int           @id @default(autoincrement())
-  name         String
   device_id    String        @unique
-  sensor      String
   temperatures Temperature[]
 }
 

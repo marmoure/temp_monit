@@ -82,7 +82,7 @@ void loop(void)
       WiFiClient client;
       HTTPClient http;
 
-      String serverPath = serverName + "?temp=" + temp;
+      String serverPath = serverName + "?temp=" + temp + "&" + "device_id=" + String(WiFi.macAddress());
 
       // Your Domain name with URL path or IP address with path
       http.begin(client, serverPath.c_str());
