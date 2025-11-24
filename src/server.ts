@@ -1,131 +1,77 @@
 import path from 'path';
 import express from 'express';
-import morgan from 'morgan';
 import prisma from './database';
-import { Humidity } from '@prisma/client';
-import bot, {notifyMe} from './bot';
+import {notifyMe} from './bot';
 
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(morgan('tiny'));
 app.use(express.static(path.join(__dirname, "public")));
 
-app.get('/update-sensor', async (req, res) => {
-  console.log(req.query);
-  const { temperature, device_id, name, humidity, sensor} = req.query;
-  if (!temperature || !device_id) return res.send("ERROR in provided parameters");
-  let device = await prisma.device.findUnique({
-    where: {
-      device_id: device_id as string
-    }
-  });
-  if (!device) {
-    device = await prisma.device.create({
-      data: {
-        device_id: device_id as string,
-        name: name as string,
-        sensor: sensor as string
-      }
-    })
-  }
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"))
+});
 
-  let newTemperature = await prisma.temperature.create({
-    data: {
-      value: temperature as string,
-      device: {
-        connect: {
-          id: device.id
-        }
-      }
-    }
-  })
-
-  // only create humidity if the sensor 
-  let  newHumidity;
-  if (humidity) {
-    newHumidity = await prisma.humidity.create({
-      data: {
-        value: humidity as string,
-        device: {
-          connect: {
-            id: device.id
-          }
-        }
-      }
-    })
-  }
-
+app.get("/temp", async (req, res) => {
+  const { device_id, temp } = req.query;
   
-  if (!device || !newTemperature ) return res.send("error in one of the instances creation");
-
-  // check if the sensor is an incubation sensor
-  if(device.name.includes("incubation")) {
-    if(+temperature > 25) notifyMe(`Temperature is ${temperature}°C, please check the incubation sensor`);
-    if(+temperature < 23) notifyMe(`Temperature is ${temperature}°C, please check the incubation sensor`);
+  if (!device_id || temp === undefined) {
+    return res.status(400).json({ error: "device_id and temp are required" });
   }
-  res.send("OK");
-})
+
+  try {
+    let device = await prisma.device.findUnique({
+      where: { device_id: device_id as string }
+    });
+
+    if (!device) {
+      device = await prisma.device.create({
+        data: { device_id: device_id as string }
+      });
+    }
+
+    const tempRecord = await prisma.temperature.create({
+      data: {
+        value: temp as string,
+        device_id: device.id
+      }
+    });
+
+    const tempNum = parseFloat(temp as string);
+    if(tempNum > 25 || tempNum < 20) {
+      notifyMe(`WARNING Temperature is ${temp}°C`);
+    }
+
+    res.json({ 
+      success: true, 
+      id: tempRecord.id,
+      timestamp: tempRecord.timestamp
+    });
+  } catch (error) {
+    console.error("Error saving temperature:", error);
+    res.status(500).json({ error: "Failed to save temperature data" });
+  }
+});
 
 app.get("/history", async (req, res) => {
-  const { device_id } = req.query;
-  if (!device_id) return res.send("ERROR");
-  const device = await prisma.device.findUnique({
-    where: {
-      device_id: device_id as string
-    }
-  });
-  if (!device) return res.send("ERROR");
+
+  // get the first device
+  const device = await prisma.device.findFirst();
+  if (!device) return res.json({error: "No device found"});
   let temperatures = await prisma.temperature.findMany({
     where: {
       device_id: device.id
     }
   });
 
-  // only get humidity if the sensor is a DHT
-  let  humidity : Humidity[] = [];
-  if(device.sensor.includes("DHT")) {
-    humidity = await prisma.humidity.findMany({
-      where: {
-        device_id: device.id
-      }
-    });
-  }
-  res.json({
-    temperatures: temperatures.map(temperature => {
-      return {
-        value: temperature.value,
-        timestamp: new Date(temperature.timestamp).getTime()
-      }
-    }),
-    humidity: humidity.map(humidity => {
-      return {
-        value: humidity.value,
-        timestamp: new Date(humidity.timestamp).getTime()
-      }
-    })
-  });
+  res.json(temperatures.map(temperature => {
+    return {
+      temperature: temperature.value,
+      time: new Date(temperature.timestamp).getTime()
+    }
+  }));
 })
-
-app.get("/devices", async (req, res) => {
-  const devices = await prisma.device.findMany();
-  res.json(
-    devices.map(device => {
-      return {
-        name: device.name,
-        device_id: device.device_id,
-        sensor: device.sensor
-      }
-    })
-  );
-})
-
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"))
-});
-
 
 export default app;

@@ -1,39 +1,82 @@
-import TelegramBot  from 'node-telegram-bot-api';
+import { Bot, InlineKeyboard, Context } from 'grammy';
 import { getCurrentTemperature, getDayHighestTemperature, getDayLowestTemperature, getDevices } from './util';
 
 const token = process.env.TOKEN;
-const chatId = 1616216219;
+let chatId : number | null = process.env.CHAT_ID ? parseInt(process.env.CHAT_ID) : null;
 
-const bot = new TelegramBot(token as string, {polling: true});
+const bot = token ? new Bot(token) : null;
 
-//matches /start
-bot.onText(/\/start/, async (msg) => {
+// Handle /start command
+if (bot) {
+  bot.command('start', async (ctx: Context) => {
   const devices = await getDevices();
-  const devices_keyboard : any[][] = devices.map(device => {
-    return [{text: `device ${device.name} ${device.device_id}`}]
+  const keyboard = new InlineKeyboard();
+  
+  devices.forEach(device => {
+    keyboard.text(`device ${device.device_id}`, `device_${device.device_id}`).row();
   });
 
-  bot.sendMessage(msg.chat.id, "Welcome", {
-    "reply_markup": {
-        "keyboard": devices_keyboard
-        }
-    });
-});
+  chatId = ctx.chat?.id || null;
+  console.log("setting chat Id to this new device");
+  
 
-//matches /device.*
-bot.onText(/device (.+)/, async (msg, match) => {
-  const chatId = msg.chat.id;
-  const device_id = match? match[1].split(" ")[1] : "";
-  if(!device_id) return bot.sendMessage(chatId, "No device id provided");
+  await ctx.reply("Welcome", {
+    reply_markup: keyboard,
+  });
+
+  notifyMe("I will be sending you temperature updates in this chat");
+  });
+}
+
+// Handle callback queries from device buttons
+if (bot) {
+  bot.callbackQuery(/device_(.+)/, async (ctx: Context) => {
+  const device_id = ctx.match![1];
+  
+  const current = await getCurrentTemperature(device_id);
+  const dayLowest = await getDayLowestTemperature(device_id);
+  const dayHighest = await getDayHighestTemperature(device_id);
+  
+  await ctx.reply(`Current Temperature is ${current}°C\nDay Lowest Temperature is ${dayLowest}°C\nDay Highest Temperature is ${dayHighest}°C`);
+  await ctx.answerCallbackQuery();
+  });
+}
+
+// Handle /device command for backward compatibility
+if (bot) {
+  bot.command('device', async (ctx: Context) => {
+  const messageText = ctx.message?.text || '';
+  const parts = messageText.split(' ');
+  const device_id = parts[1];
+  
+  if (!device_id) return ctx.reply("No device id provided");
 
   const current = await getCurrentTemperature(device_id);
   const dayLowest = await getDayLowestTemperature(device_id);
   const dayHighest = await getDayHighestTemperature(device_id);
-  return bot.sendMessage(chatId, `Current Temperature is ${current}°C\nDay Lowest Temperature is ${dayLowest}°C\nDay Highest Temperature is ${dayHighest}°C`);
-});
+  return ctx.reply(`Current Temperature is ${current}°C\nDay Lowest Temperature is ${dayLowest}°C\nDay Highest Temperature is ${dayHighest}°C`);
+  });
+}
+
+// Start the bot asynchronously with error handling
+if (bot) {
+  bot.start().catch((error) => {
+    console.error('Failed to start Telegram bot:', error);
+  });
+} else {
+  console.log('No Telegram token provided, bot will not start');
+}
 
 export const notifyMe = (message: string) => {
-  bot.sendMessage(chatId, message);
+  if (!chatId || !bot) {
+    console.log('No chat ID or bot available, skipping Telegram notification');
+    return;
+  }
+  try {
+    bot.api.sendMessage(String(chatId), message);
+  } catch (error) {
+    console.error('Failed to send Telegram notification:', error);
+  }
 }
 
 export default bot;

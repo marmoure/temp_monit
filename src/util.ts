@@ -5,9 +5,7 @@ export const getDevices = async () => {
   return(
     devices.map(device => {
       return {
-        name: device.name,
         device_id: device.device_id,
-        sensor: device.sensor
       }
     })
   );
