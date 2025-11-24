@@ -1,13 +1,8 @@
 // Include the libraries we need
-
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <WiFiClient.h>
 #include <ArduinoOTA.h>
-
-char *ssid = "ZTE_2.4G_cxm65S";
-char *password = "Mp22NW9j";
-String serverName = "http://192.168.8.110:4000/update-sensor";
 
 // temptrure
 
@@ -23,7 +18,14 @@ OneWire oneWire(ONE_WIRE_BUS);
 
 // Pass our oneWire reference to Dallas Temperature sensor 
 DallasTemperature sensors(&oneWire);
-// tempture end
+
+// WIFI
+char *ssid = "ZTE_2.4G_cxm65S";
+char *password = "Mp22NW9j";
+
+
+// SERVER
+String serverName = "http://192.168.8.110:4000/temp";
 
 // the following variables are unsigned longs because the time, measured in
 unsigned long lastTime = 0;
@@ -80,7 +82,7 @@ void loop(void)
       WiFiClient client;
       HTTPClient http;
 
-      String serverPath = serverName + "?name=wemos_DS18B20_1_incubation&sensor=DS18B20&temperature=" + temp + "&" + "device_id=" + String(WiFi.macAddress());
+      String serverPath = serverName + "?temp=" + temp;
 
       // Your Domain name with URL path or IP address with path
       http.begin(client, serverPath.c_str());
